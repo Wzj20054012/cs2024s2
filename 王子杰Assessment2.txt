@@ -1,0 +1,75 @@
+Kubernetes 知识问答
+1. Orchestration tools in modern applications
+(a) How orchestration tools help manage and scale application servers
+Kubernetes 等编排工具通过以下方式帮助管理和扩展应用服务器：
+自动化容器部署：无需手动配置服务器，自动将容器部署到集群中的节点
+弹性伸缩：根据负载自动调整应用实例数量
+自愈能力：监控容器健康状态，自动重启失败的容器
+滚动更新：支持零停机时间的应用更新
+资源优化：智能调度容器，最大化利用硬件资源
+服务发现：内置 DNS 系统，让容器之间可以轻松通信
+(b) How orchestration tools facilitate automated deployment, scaling, and management
+Kubernetes 通过以下机制实现自动化部署、扩展和管理：
+声明式配置：用户只需定义期望状态，Kubernetes 负责实现并维持该状态
+控制器模式：各种控制器 (如 Deployment、StatefulSet) 持续监控集群状态
+自动伸缩：Horizontal Pod Autoscaler 根据 CPU 使用率或自定义指标调整 Pod 数量
+滚动更新：逐步替换旧版本容器，确保服务持续可用
+自愈能力：检测并替换故障组件
+集中化日志和监控：与 Prometheus、Grafana 等工具集成
+2. Difference between Pod, Deployment, and Service
+Pod：Kubernetes 的最小部署单元，包含一个或多个容器，共享网络和存储资源
+Deployment：管理 Pod 和 ReplicaSet 的控制器，提供声明式更新和回滚能力
+Service：定义 Pod 的访问方式，提供稳定的网络端点，实现 Pod 之间的通信和负载均衡
+3. Namespace in Kubernetes
+Namespace 是 Kubernetes 中的资源隔离机制，用于将集群资源划分为多个虚拟集群。
+示例：
+bash
+# 创建一个名为 "dev" 的命名空间
+kubectl create namespace dev
+4. Role of Kubelet and checking nodes
+Kubelet 的作用：
+在每个节点上运行的代理程序
+确保容器按 Pod 规范运行
+与控制平面通信，报告节点和容器状态
+执行容器健康检查
+查看集群节点：
+bash
+kubectl get nodes
+5. Difference between ClusterIP, NodePort, and LoadBalancer
+ClusterIP：仅在集群内部可访问的服务，默认类型
+NodePort：在每个节点上开放静态端口，可通过节点 IP 访问
+LoadBalancer：使用云提供商的负载均衡器，自动分配外部 IP
+6. Scaling a Deployment to 5 replicas
+bash
+kubectl scale deployment <deployment-name> --replicas=5
+7. Updating image of a Deployment without downtime
+bash
+# 更新镜像
+kubectl set image deployment/<deployment-name> <container-name>=<new-image>:<tag>
+
+# 查看滚动更新状态
+kubectl rollout status deployment/<deployment-name>
+8. Exposing a Deployment to external traffic
+bash
+# 创建 NodePort 服务
+kubectl expose deployment/<deployment-name> --type=NodePort --port=<port>
+
+# 或创建 LoadBalancer 服务(云环境)
+kubectl expose deployment/<deployment-name> --type=LoadBalancer --port=<port>
+9. How Kubernetes scheduling decides which node a Pod runs on
+调度器考虑以下因素决定 Pod 运行位置：
+资源需求：CPU、内存等资源请求是否满足
+节点选择器：通过标签选择特定节点
+亲和性 / 反亲和性规则：控制 Pod 与其他 Pod 或节点的关系
+污点和容忍度：限制哪些 Pod 可以运行在特定节点
+Pod 拓扑分布约束：确保 Pod 均匀分布在不同拓扑域
+优先级和抢占：高优先级 Pod 可以抢占低优先级 Pod 的资源
+10. Role of Ingress and how it differs from a Service
+Ingress 的作用：
+管理外部访问集群服务的规则集合
+提供 HTTP/HTTPS 路由
+支持域名、路径转发、SSL 终止等功能
+与 Service 的区别：
+Service 工作在传输层 (四层)，Ingress 工作在应用层 (七层)
+Service 为每个服务提供固定访问点，Ingress 可基于域名和路径路由到不同服务
+Ingress 需要 Ingress Controller 才能工作，而 Service 是 Kubernetes 核心组件
