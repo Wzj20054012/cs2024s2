@@ -1,0 +1,69 @@
+Kubernetes Knowledge Q&A
+1. Orchestration Tools in Modern Applications
+(a) How orchestration tools help manage and scale application servers
+Orchestration tools like Kubernetes help manage and scale application servers in the following ways:
+Automated container deployment: Containers are automatically deployed to nodes in the cluster without manual server configuration.
+Elastic scaling: The number of application instances is automatically adjusted based on workload.
+Self-healing capability: Monitors the health status of containers and automatically restarts failed containers.
+Rolling updates: Supports application updates with zero downtime.
+Resource optimization: Intelligently schedules containers to maximize hardware resource utilization.
+Service discovery: Features a built-in DNS system that enables easy communication between containers.
+(b) How orchestration tools facilitate automated deployment, scaling, and management
+Kubernetes enables automated deployment, scaling, and management through the following mechanisms:
+Declarative configuration: Users only need to define the desired state, and Kubernetes is responsible for implementing and maintaining that state.
+Controller pattern: Various controllers (e.g., Deployment, StatefulSet) continuously monitor the cluster state.
+Autoscaling: The Horizontal Pod Autoscaler adjusts the number of Pods based on CPU usage or custom metrics.
+Rolling updates: Gradually replaces old-version containers to ensure continuous service availability.
+Self-healing capability: Detects and replaces faulty components.
+Centralized logging and monitoring: Integrates with tools such as Prometheus and Grafana.
+2. Difference Between Pod, Deployment, and Service
+Pod: It is the smallest deployment unit in Kubernetes. A Pod contains one or more containers, and all containers within the same Pod share network and storage resources.
+Deployment: It acts as a controller that manages Pods and ReplicaSets. Its key capabilities include providing declarative updates for Pods (such as updating container images) and supporting rollback to previous versions if updates encounter issues.
+Service: It defines the access method for a set of Pods. By providing a stable network endpoint, a Service ensures that even if the IP addresses of underlying Pods change (due to scaling or rescheduling), external access to the service remains uninterrupted. Additionally, it implements load balancing to distribute traffic across multiple Pod instances.
+3. Namespace in Kubernetes
+A Namespace is a resource isolation mechanism in Kubernetes. Its main function is to divide the resources of a single Kubernetes cluster into multiple independent "virtual clusters". This isolation helps in scenarios like multi-team collaboration or multi-project management, as it prevents resource conflicts and confusion between different teams or projects (e.g., avoiding name duplication of resources like Deployments or Services across different teams).
+Example: Create a namespace named "dev".
+4. Role of Kubelet and Checking Nodes
+Role of Kubelet
+Kubelet is an agent program that runs on every node in the Kubernetes cluster (including master nodes in some configurations and all worker nodes).
+Its core responsibility is to ensure that all containers in the Pods assigned to its node run in accordance with the Pod specification (Pod Spec) — this includes starting containers, restarting stopped containers, and terminating containers that should not be running.
+It communicates continuously with the cluster's control plane (primarily the API Server) to report the current status of the node (e.g., whether the node is healthy) and the status of all containers on the node.
+It executes health checks for containers (such as liveness probes and readiness probes) to determine if containers are functioning properly, and takes corresponding actions (like restarting) if issues are detected.
+Checking cluster nodes
+The operation to view all nodes in the cluster is used to obtain information about the status, roles, and system versions of nodes in the cluster (e.g., whether nodes are in the "Ready" state, the Kubernetes version running on the node, etc.).
+5. Difference Between ClusterIP, NodePort, and LoadBalancer
+ClusterIP: It is the default service type in Kubernetes. A ClusterIP service is only accessible from within the cluster — Pods inside the cluster can communicate with the service using the assigned virtual IP, but external traffic (outside the cluster) cannot directly access it.
+NodePort: This service type opens a static port (known as the NodePort) on every node in the cluster. To access the service from outside the cluster, users can use the combination of any node's IP address and the static NodePort. While it enables external access, it requires users to know the node IPs and manage port conflicts manually.
+LoadBalancer: This service type relies on the load balancer service provided by cloud service providers (e.g., AWS ELB, Azure Load Balancer). When a LoadBalancer service is created, the cloud provider automatically provisions an external load balancer and assigns a public IP address to it. External traffic is routed to the load balancer first, and the load balancer then distributes the traffic to the appropriate nodes in the cluster. This type simplifies external access and provides professional load balancing capabilities, but it is dependent on cloud environments and may incur additional costs.
+6. Scaling a Deployment to 5 Replicas
+The operation to scale a Deployment to 5 replicas adjusts the number of running Pod instances managed by the specified Deployment to 5. This means the Deployment will ensure that there are always 5 healthy Pods running (if some Pods fail, the Deployment will automatically create new ones to maintain the count of 5 replicas). Note: Replace <deployment-name> with the actual name of the Deployment you want to scale (e.g., if the Deployment is named "nginx-deploy", use that name in the operation).
+7. Updating the Image of a Deployment Without Downtime
+Updating the image of a Deployment without downtime involves two key steps:
+First, update the image of the specified container within the Deployment — this tells Kubernetes to use the new image (specified by <new-image>:<tag>) for the containers in the Deployment.
+Then, check the status of the rolling update to confirm whether the update is progressing smoothly, if all new Pods with the new image are starting successfully, and if the old Pods are being terminated correctly.
+Note: <deployment-name> refers to the name of the Deployment to be updated, <container-name> is the name of the specific container in the Deployment (a Deployment may have multiple containers, so the target container must be specified), and <new-image>:<tag> is the identifier of the new image (e.g., "nginx:1.25" where "nginx" is the image name and "1.25" is the version tag). The rolling update mechanism ensures that the service remains available during the update — old Pods are only terminated after new Pods are ready to handle traffic, thus achieving zero downtime.
+8. Exposing a Deployment to External Traffic
+There are two common ways to expose a Deployment to external traffic (allowing access from outside the Kubernetes cluster):
+Create a NodePort-type service for the Deployment: This service opens a static port on each node in the cluster, and external traffic can access the Deployment's Pods by using any node's IP and the static port.
+In a cloud environment, create a LoadBalancer-type service for the Deployment: The cloud provider will automatically create an external load balancer with a public IP. External traffic is directed to the load balancer, which then distributes the traffic to the Deployment's Pods.
+Note: Replace <port> with the port number used by the service inside the container (e.g., if the container runs an Nginx server, the internal port is typically 80, so use 80 for <port>). This port number represents the port that the container listens on for service requests.
+9. How Kubernetes Scheduling Decides Which Node a Pod Runs On
+The Kubernetes scheduler (a core component of the control plane) determines which node a Pod will run on by comprehensively evaluating the following factors:
+Resource requirements: The scheduler first checks whether a node has sufficient available resources (such as CPU and memory) to meet the resource requests declared by the Pod. If a node's remaining resources are less than the Pod's requests, the Pod cannot be scheduled to that node.
+Node Selector: If the Pod defines a Node Selector (a set of key-value pairs matching node labels), the scheduler will only consider nodes that have the exact matching labels. For example, if a Pod's Node Selector requires "environment=production", only nodes labeled "environment=production" are eligible.
+Affinity/Anti-Affinity rules: These are more flexible than Node Selectors. Affinity rules encourage the scheduler to place a Pod on a node that meets certain conditions (e.g., "prefer to run the Pod on a node that already has a database Pod"), while Anti-Affinity rules prevent the scheduler from placing a Pod on a node that meets certain conditions (e.g., "do not run multiple instances of the same service on the same node" to avoid single points of failure).
+Taints and Tolerations: Nodes can have "taints" — special labels that repel most Pods. A Pod can only be scheduled to a tainted node if it has a corresponding "toleration" (a configuration that allows it to ignore the node's taint). This is often used to reserve nodes for specific workloads (e.g., tainting a node with "dedicated=gpu" and only allowing GPU-required Pods to tolerate it).
+Pod Topology Spread Constraints: These rules ensure that Pods are evenly distributed across different "topology domains" (e.g., different physical hosts, different availability zones, or different data centers). This prevents all Pods of a service from being concentrated on a single domain, which could cause service outages if that domain fails.
+Priority and Preemption: Pods have priority levels. If a high-priority Pod cannot find a node with sufficient resources, the scheduler can "preempt" (evict) low-priority Pods running on a node to free up resources for the high-priority Pod. This ensures that critical workloads (e.g., production services) get resource priority.
+10. Role of Ingress and Its Difference from Service
+Role of Ingress
+Ingress is a Kubernetes resource used to manage external access to services within the cluster. Its core roles include:
+Acting as a "traffic entry point" for external HTTP/HTTPS traffic, managing a set of routing rules that determine how external requests are forwarded to internal services.
+Supporting routing based on domain names (e.g., forwarding requests for "api.example.com" to the API service and requests for "web.example.com" to the web service) and based on URL paths (e.g., forwarding requests for "example.com/api" to the API service and requests for "example.com/static" to the static resource service).
+Providing additional capabilities such as SSL termination (decrypting HTTPS traffic at the Ingress layer and forwarding plain HTTP traffic to internal services, simplifying SSL certificate management), request redirection (e.g., redirecting HTTP requests to HTTPS), and basic authentication.
+It is important to note that Ingress itself is only a set of routing rules — it requires an "Ingress Controller" (a running component, often implemented as a Pod, such as Nginx Ingress Controller) to execute these rules. Without an Ingress Controller, Ingress rules have no actual effect.
+Difference from Service
+Working Layer: Services operate at the transport layer (Layer 4 of the TCP/IP model), which means they only forward traffic based on IP addresses and port numbers, without understanding the content of the traffic (e.g., they cannot distinguish between different HTTP requests). In contrast, Ingress operates at the application layer (Layer 7 of the TCP/IP model), allowing it to analyze application-layer data (such as HTTP headers, domain names, and URL paths) to implement more fine-grained routing.
+Core Function: A Service provides a fixed access endpoint for a single set of related Pods and implements basic load balancing across those Pods. Each Service typically corresponds to one type of workload. Ingress, however, acts as a "unified entry point" — it can manage routing rules for multiple Services, forwarding different external requests to different internal Services based on domain names or paths.
+Dependent Components: Services are core components of Kubernetes — once a Service is created, it takes effect immediately without relying on any additional external components. Ingress, by contrast, is dependent on an Ingress Controller: the Ingress resource only defines rules, and the Ingress Controller is responsible for monitoring Ingress resources and applying the rules to actual traffic forwarding (e.g., configuring a reverse proxy to implement the rules).
+Access Scenario: Services are suitable for basic access scenarios — ClusterIP for internal cluster communication, NodePort and LoadBalancer for simple external access (e.g., exposing a single service to the outside). Ingress is suitable for complex external access scenarios — such as when multiple services need to share a single public IP and domain name, or when HTTPS, domain-based routing, or path-based routing is required.
