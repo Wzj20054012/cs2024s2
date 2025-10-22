@@ -1,0 +1,47 @@
+Serverless computing aims to eliminate infrastructure management overhead compared to traditional microservice deployment on Kubernetes. With Kubernetes, teams must manage clusters, nodes, scaling configurations, and resource allocation, whereas serverless abstracts these details, letting developers focus solely on code.
+Example where serverless is better: A sporadic workload like a holiday-themed marketing API that sees traffic spikes once a year. Serverless auto-scales to zero when idle, avoiding costs for unused resources—unlike Kubernetes, which requires maintaining minimum node/pod counts.
+Example where serverless may not be better: A low-latency trading application needing consistent performance. Serverless cold starts and limited control over underlying infrastructure can introduce unpredictable delays, making Kubernetes (with fine-grained resource tuning) more reliable.
+A service mesh like Istio adds specialized, network-level capabilities beyond Kubernetes’ native networking:
+Uniform observability: It provides metrics, logs, and traces for all service-to-service communication, regardless of the application stack, whereas Kubernetes networking lacks built-in telemetry for cross-service interactions.
+Advanced traffic management: Features like retries, timeouts, and circuit breaking enforce resilience policies consistently across services, avoiding the need to implement these in application code.
+Security: Istio encrypts traffic (mTLS) and enforces access controls at the network layer, whereas Kubernetes relies on manual configuration of secrets or network policies for similar goals.
+A sidecar proxy (e.g., Envoy in Istio) is a lightweight network proxy deployed alongside each service instance in a pod. It intercepts all inbound and outbound traffic to/from the service, handling:
+Routing and load balancing between services.
+Enforcing security policies (e.g., mTLS).
+Collecting telemetry (metrics, logs) on traffic.
+Implementing resilience features (retries, timeouts).
+It is needed in a service mesh to decouple network concerns from application code. By centralizing these responsibilities in the proxy, developers avoid embedding networking logic into services, ensuring consistency across a microservices fleet.
+Istio provides traffic management features like:
+Weighted routing: Directs a percentage of traffic to different service versions (e.g., 10% to a new release, 90% to the stable version). Useful for canary deployments to test new features with minimal risk.
+Circuit breaking: Stops traffic to a failing service after a threshold of errors, preventing cascading failures. Critical in production to maintain system stability when dependencies fail.
+Knative Serving enables autoscaling through its Activator and Autoscaler components. The Autoscaler monitors traffic metrics (e.g., requests per second, concurrency) against user-defined targets.
+Scaling up: Triggered when traffic exceeds the target (e.g., concurrency > 10 per pod), creating new pods to handle load.
+Scaling down: Occurs when traffic drops below the target. Knative can scale to zero pods if no traffic is detected, reducing resource usage. The Activator temporarily handles requests when scaled to zero, triggering pod creation.
+Knative Eventing manages event production, routing, and consumption to support event-driven architectures. It decouples event sources (e.g., databases, message queues) from sinks (services processing events) via a declarative model.
+It supports event-driven workflows by:
+Enabling loose coupling: Sources and sinks interact through events without direct knowledge of each other.
+Providing flexible routing: Events can be filtered, transformed, or broadcast to multiple sinks.
+Supporting multiple event protocols (e.g., CloudEvents) for interoperability across systems.
+Knative leverages Kubernetes primitives but abstracts them to simplify serverless deployment:
+Abstracted components: Knative Services replace direct management of Kubernetes Deployments, Services, and Ingresses. The Autoscaler abstracts HorizontalPodAutoscalers (HPAs) with more granular scaling logic (e.g., concurrency-based scaling).
+Benefits: Developers define only code and high-level requirements (e.g., timeout, scaling targets) instead of low-level Kubernetes configurations. This reduces operational overhead and ensures consistency across deployments.
+In KServe, an InferenceService is the primary resource for deploying machine learning models. It packages model serving logic, scaling rules, and networking configurations into a single declarative resource.
+It simplifies ML deployment by:
+Abstracting infrastructure details (e.g., pod scheduling, scaling) behind a model-focused API.
+Supporting multiple frameworks (TensorFlow, PyTorch) via pre-built serving runtimes.
+Integrating with Knative for auto-scaling and Istio for traffic management, eliminating the need to configure these separately.
+In a production ML workflow with KServe, data flow from HTTP request to prediction follows:
+Kubernetes: Manages underlying pods, networking, and resource allocation for KServe components.
+Istio: Routes the HTTP request to the appropriate InferenceService pod, handling load balancing and mTLS.
+Knative: Manages scaling of the InferenceService pod (if needed) via its autoscaler.
+KServe: Unpacks the request, passes data to the model (via a framework-specific runtime), generates a prediction, and returns the response.
+Latency bottlenecks may occur:
+At the Istio sidecar (due to traffic interception/encryption).
+During Knative cold starts (if the service scaled to zero).
+In model inference (e.g., large models processing complex inputs).
+Istio’s traffic routing supports canary deployments/A/B testing in Knative/KServe by:
+Weighted routing: Directing a subset of traffic to a new model version (e.g., 5% to v2, 95% to v1 in KServe) to measure performance.
+Header-based routing: Sending requests with specific headers (e.g., user-group: beta) to a test version for A/B testing.
+Pros vs. manual rollouts:
+Pros: Fine-grained control, no downtime, easy rollbacks (by adjusting weights/headers), and integration with observability tools to compare versions.
+Cons: Added complexity from managing Istio configurations; over-reliance on network-layer logic may mask application-level issues; requires understanding of service mesh concepts.
